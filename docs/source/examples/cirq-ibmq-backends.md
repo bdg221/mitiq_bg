@@ -74,7 +74,7 @@ for instructions to create an account, save credentials, and see online quantum 
 ```{code-cell} ipython3
 import qiskit
 from qiskit_aer import QasmSimulator
-from qiskit_ibm_runtime import QiskitRuntimeService
+from qiskit_ibm_runtime import SamplerV2 as Sampler, QiskitRuntimeService
 from mitiq.interface.mitiq_qiskit.conversions import to_qiskit
 
 if QiskitRuntimeService.saved_accounts() and USE_REAL_HARDWARE:
@@ -107,7 +107,8 @@ def cirq_ibm_executor(cirq_circuit: cirq.Circuit, shots: int = 1024) -> float:
     )
 
     # Run the circuit
-    job = backend.run(exec_circuit, shots=shots)
+    sampler = Sampler(mode=backend)
+    job = sampler.run(exec_circuit, shots=shots)
     
     # Convert from raw measurement counts to the expectation value
     counts = job.result().get_counts()
@@ -200,7 +201,8 @@ exec_circuit = qiskit.transpile(
 )
 
 # Run the circuit
-job = backend.run(exec_circuit, shots=shots)
+sampler = Sampler(mode=backend)
+job = sampler.run(exec_circuit, shots=shots)
 ```
 
 **Note:** We set the ``optimization_level=0`` to prevent any compilation by Qiskit transpilers.
