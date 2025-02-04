@@ -40,7 +40,7 @@ from matplotlib import pyplot as plt
 
 import qiskit
 from qiskit_aer import AerSimulator
-from qiskit_ibm_runtime import QiskitRuntimeService
+from qiskit_ibm_runtime import SamplerV2 as Sampler, QiskitRuntimeService
 
 from mitiq.interface.mitiq_qiskit import to_qiskit
 from mitiq import ddd, QPROGRAM
@@ -173,7 +173,8 @@ def ibm_executor(
     """
     if noisy:
         transpiled = qiskit.transpile(circuit, backend=backend, optimization_level=0)
-        job = backend.run(transpiled, shots=shots)
+        sampler = Sampler(mode=backend)
+        job = sampler.run(transpiled, shots=shots)
     else:
         ideal_backend = AerSimulator()
         job = ideal_backend.run(circuit, optimization_level=0, shots=shots)
