@@ -24,7 +24,7 @@ This tutorial shows an example of how to mitigate noise on IBMQ backends.
 ```{code-cell} ipython3
 import qiskit
 from qiskit_aer import QasmSimulator
-from qiskit_ibm_runtime import QiskitRuntimeService
+from qiskit_ibm_runtime import SamplerV2 as Sampler, QiskitRuntimeService
 
 from mitiq import zne
 from mitiq.interface.mitiq_qiskit.qiskit_utils import initialized_depolarizing_noise
@@ -100,7 +100,8 @@ def ibmq_executor(circuit: qiskit.QuantumCircuit, shots: int = 8192) -> float:
     )
     
     # Run the circuit
-    job = backend.run(exec_circuit, shots=shots)
+    sampler = Sampler(mode=backend)
+    job = sampler.run(exec_circuit, shots=shots)
 
     # Convert from raw measurement counts to the expectation value
     counts = job.result().get_counts()
@@ -194,7 +195,8 @@ exec_circuit = qiskit.transpile(
 )
 
 # Run the circuit
-job = backend.run(exec_circuit, shots=shots)
+sampler = Sampler(mode=backend)
+job = sampler.run(exec_circuit, shots=shots)
 ```
 
 **Note:** We set the ``optimization_level=0`` to prevent any compilation by Qiskit transpilers.
