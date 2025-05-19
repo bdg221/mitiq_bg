@@ -5,9 +5,9 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.3
+    jupytext_version: 1.16.1
 kernelspec:
-  display_name: Python 3
+  display_name: mitiq
   language: python
   name: python3
 ---
@@ -31,7 +31,7 @@ To start, relevant modules and libraries are imported. Please ensure that the fo
 In the code below the environmental variable, `QRACK_MAX_CPU_QB`, is set to `-1`. This enviroment variable sets the maximum on how many qubits can be allocated on a single QEngineCPU instance. More information can be found on the [Qrack README page](https://github.com/unitaryfoundation/qrack/blob/main/README.md#maximum-allocation-guard).
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 import numpy as np
 import collections
 
@@ -48,14 +48,14 @@ from mitiq import cdr, Observable, PauliString
 
 import cirq
 
-from qiskit.providers.fake_provider import Fake5QV1
+from qiskit.providers.fake_provider import GenericBackendV2
 ```
 
 ## Sample Circuit
 
 This sample circuit includes Clifford gates (`H`, `CNOT`, `RX`) and non-Clifford gates (`RZ`).
 
-```{code-cell}
+```{code-cell} ipython3
 a, b = cirq.LineQubit.range(2)
 circuit = cirq.Circuit(
     cirq.H.on(a),  # Clifford
@@ -76,7 +76,7 @@ print(circuit)
 
 ## Devices and Near-Clifford Simulator
 
-During CDR, near-Clifford representations of the original circuit are generated. Those near-Clifford representations are run with a near-Clifford simulator (Qrack Near-Clifford Simulator) and also on the quantum device (or noisy simulator, like Qiskit Fake Backend.) In this example, we also want to show how the unmitigated and mitigated results compare to the exact results, so we will use another simulator (Cirq Simulator) to generate the ideal results. 
+During CDR, near-Clifford representations of the original circuit are generated. Those near-Clifford representations are run with a near-Clifford simulator (Qrack Near-Clifford Simulator) and also on the quantum device (or noisy simulator, like Qiskit Fake Backend.) In this example, we also want to show how the unmitigated and mitigated results compare to the exact results, so we will use another simulator (Cirq Simulator) to generate the ideal results.
 
 +++
 
@@ -86,7 +86,7 @@ Especially when using CDR at scale, it is important to use an efficient Near-Cli
 
 Since CDR includes the generation of near-Clifford circuits representing the original circuit, a near-Clifford simulator is ideal for efficiently simulating the circuit. Again, this is particularly important when using CDR at scale.
 
-```{code-cell}
+```{code-cell} ipython3
 def qrack_simulate(circuit: cirq.Circuit, shots=1000) -> float:
     """Returns the expectation value of 00 from the state prepared by the circuit
     executed without noise by Qrack configured as a near-Clifford simulator.
@@ -114,9 +114,9 @@ def qrack_simulate(circuit: cirq.Circuit, shots=1000) -> float:
 
 CDR requires the use of a quantum device or a noisy simulator. The near-Clifford circuits that are generated from the original circuit are executed on the quantum device or noisy simulator in order to compare against the simulated results.
 
-In this example, a Qiskit 5 Qubit Fake Backend is used. The `Fake5QV1` uses configurations and noise settings taken previously from the 5 qubit IBM Quantum Yorktown device. The `qiskit_noisy` function takes the Cirq circuit and uses Mitiq to change it into a Qiskit circuit. After adding measurements, the circuit is run on the fake backend. The expectation value for `00` is then returned.
+In this example, a Qiskit GenericBackendV2 is used. The [GenericBackendV2](https://docs.quantum.ibm.com/api/qiskit/qiskit.providers.fake_provider.GenericBackendV2) uses configurations and default noise settings for gates and qubits. The `qiskit_noisy` function takes the Cirq circuit and uses Mitiq to change it into a Qiskit circuit. After adding measurements, the circuit is run on the fake backend. The expectation value for `00` is then returned.
 
-```{code-cell}
+```{code-cell} ipython3
 # Use Qiskit's Fave5QV1 as a noisy simulator
 def qiskit_noisy(circuit: cirq.Circuit, shots=1000):
     """Execute the input circuit and return the expectation value of |00..0><00..0|"""
@@ -128,7 +128,7 @@ def qiskit_noisy(circuit: cirq.Circuit, shots=1000):
     qiskit_circ.measure_all()
 
     # Setup the fake backend and run the circuit
-    noisy_backend = Fake5QV1()
+    noisy_backend = GenericBackendV2(5)
     job = noisy_backend.run(qiskit_circ, shots=shots)
 
     # Use the resulting counts to return the expectation value of 00
@@ -141,7 +141,7 @@ def qiskit_noisy(circuit: cirq.Circuit, shots=1000):
 
 The `compute_density_matrix` is the Cirq density matrix simulator with a Mitiq wrapper. It is used to obtain the exact `00` expectation value. This is then used to determine the accuracy of the mitigated and unmitigated reuslts.
 
-```{code-cell}
+```{code-cell} ipython3
 def cirq_simulate(circuit: cirq.Circuit) -> np.ndarray:
     """Returns Tr[ρ |0⟩⟨0|] where ρ is the state prepared by the circuit 
     executed without depolarizing noise.
@@ -154,7 +154,7 @@ def cirq_simulate(circuit: cirq.Circuit) -> np.ndarray:
 
 With the different executor functions defined for running the Qrack, Qiskit, and Cirq simulators, the `mitiq.cdr.execute_with_cdr` function can now be called.
 
-```{code-cell}
+```{code-cell} ipython3
 ideal_expval = cirq_simulate(circuit).round(5)
 print(f"Ideal expectation value from Cirq Simulator: {ideal_expval:.3f}")
 
@@ -168,7 +168,6 @@ mitigated_expval = cdr.execute_with_cdr(
     random_state=0,
 )
 print(f"Mitigated expectation value with Mitiq CDR: {mitigated_expval:.3f}\n")
-
 ```
 
 ## Conclusion
@@ -176,7 +175,7 @@ By learning from the near-Clifford circuits that resemble the original circuit, 
 
 The improvement factor with CDR can be seen below to highlight the mitigated results that can be provided with this technique.
 
-```{code-cell}
+```{code-cell} ipython3
 unmitigated_error = abs(unmitigated_expval - ideal_expval)
 mitigated_error = abs(mitigated_expval - ideal_expval)
 
