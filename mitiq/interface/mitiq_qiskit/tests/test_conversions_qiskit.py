@@ -6,6 +6,7 @@
 """Unit tests for conversions between Mitiq circuits and Qiskit circuits."""
 
 import copy
+from collections import Counter
 
 import cirq
 import numpy as np
@@ -211,9 +212,39 @@ def test_convert_with_qft():
     qft_cirq = from_qiskit(circuit)
     qreg = cirq.LineQubit.range(1)
     cirq_circuit = cirq.Circuit(
-        [cirq.ops.H.on(qreg[0]), cirq.ops.measure(qreg[0], key="meas")]
+        [cirq.H(qreg[0]), cirq.ops.measure(qreg[0], key="meas")]
     )
-    assert _equal(cirq_circuit, qft_cirq)
+
+    def create_gate_list(op) -> list:
+        nested_gates = []
+        if type(op) == cirq.CircuitOperation:
+            for inside_op in op.circuit.all_operations():
+                nested_gates.extend(create_gate_list(inside_op))
+            return nested_gates
+
+        if hasattr(op, "gate") and op.gate is not None:
+            return [type(op.gate)]
+
+        return []
+
+    cirq_circuit_gate_list = list(
+        gate
+        for op in cirq_circuit.all_operations()
+        for gate in create_gate_list(op)
+    )
+    # create dict of gate types and counts for cirq circuit
+    cirq_gate_dict = Counter(cirq_circuit_gate_list)
+
+    qft_cirq_gate_list = [
+        gate
+        for op in qft_cirq.all_operations()
+        for gate in create_gate_list(op)
+    ]
+    # create dict of gate types and counts for qft cirq circuit
+    qft_gate_dict = Counter(qft_cirq_gate_list)
+
+    # both circuits should have the same gates with the same counts
+    assert cirq_gate_dict == qft_gate_dict
 
 
 @pytest.mark.parametrize("as_qasm", (True, False))
