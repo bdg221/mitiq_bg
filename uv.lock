@@ -1590,8 +1590,8 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "amazon-braket-sdk", marker = "extra == 'braket'", specifier = ">=1.91,<1.94" },
-    { name = "cirq-core", specifier = ">=1.4.0,<1.5.0" },
-    { name = "cirq-ionq", marker = "extra == 'braket'", specifier = ">=1.4.0,<1.5.0" },
+    { name = "cirq-core", specifier = ">=1.4.0,<1.6.0" },
+    { name = "cirq-ionq", marker = "extra == 'braket'", specifier = ">=1.4.0,<1.6.0" },
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.22.0,<2.0.0" },
     { name = "pennylane", marker = "extra == 'pennylane'", specifier = "~=0.36.0" },
