@@ -86,7 +86,8 @@ jobs:
       - name: Install Python ${{ matrix.python-version }} and Python dependencies except for docs
         run: |
           uv python pin ${{ matrix.python-version }}
-          uv python install 
+          uv python install
+          uv pip install setuptools>=61
           uv sync --all-extras
 
       - name: Run the quilc & qvm Docker images
