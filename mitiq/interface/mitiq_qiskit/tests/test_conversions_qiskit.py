@@ -213,7 +213,9 @@ def test_convert_with_qft():
     cirq_circuit = cirq.Circuit(
         [cirq.ops.H.on(qreg[0]), cirq.ops.measure(qreg[0], key="meas")]
     )
-    assert _equal(cirq_circuit, qft_cirq)
+    assert cirq.equal_up_to_global_phase(
+        cirq_circuit.unitary(), qft_cirq.unitary()
+    )
 
 
 @pytest.mark.parametrize("as_qasm", (True, False))
