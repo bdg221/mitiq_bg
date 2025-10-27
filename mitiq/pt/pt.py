@@ -3,14 +3,13 @@
 # This source code is licensed under the GPL license (v3) found in the
 # LICENSE file in the root directory of this source tree.
 
+import importlib.util
 import random
 from collections.abc import Callable
 from functools import singledispatch
 
 import cirq
-import pennylane as qml
 from cirq import Circuit as _Circuit
-from pennylane.tape import QuantumTape
 
 from mitiq import QPROGRAM
 from mitiq.interface import accept_qprogram_and_validate
@@ -58,11 +57,6 @@ CIRQ_NOISE_FUNCTION = Callable[[float], cirq.Gate]
 CIRQ_NOISE_OP: dict[str, CIRQ_NOISE_FUNCTION] = {
     "bit-flip": cirq.bit_flip,
     "depolarize": cirq.depolarize,
-}
-
-PENNYLANE_NOISE_OP = {
-    "bit-flip": qml.BitFlip,
-    "depolarize": qml.DepolarizingChannel,
 }
 
 
@@ -141,24 +135,33 @@ def _cirq(circuit: _Circuit, noise_name: str, **kwargs: float) -> _Circuit:
     return noisy_circuit
 
 
-@_add_noise_to_two_qubit_gates.register
-def _pennylane(
-    circuit: QuantumTape, noise_name: str, **kwargs: float
-) -> QuantumTape:
-    new_ops = []
-    noise_function = PENNYLANE_NOISE_OP[noise_name]
+if importlib.util.find_spec("pennylane") is not None:
+    import pennylane as qml
+    from pennylane.tape import QuantumTape
 
-    noisy_gates = ["CNOT", "CZ"]
-    for op in circuit:
-        new_ops.append(op)
-        if op.name in noisy_gates:
-            for wire in op.wires:
-                noise_op = noise_function(**kwargs, wires=wire)
-                new_ops.append(noise_op)
+    PENNYLANE_NOISE_OP = {
+        "bit-flip": qml.BitFlip,
+        "depolarize": qml.DepolarizingChannel,
+    }
 
-    return QuantumTape(
-        ops=new_ops, measurements=circuit.measurements, shots=circuit.shots
-    )
+    @_add_noise_to_two_qubit_gates.register
+    def _pennylane(
+        circuit: QuantumTape, noise_name: str, **kwargs: float
+    ) -> QuantumTape:
+        new_ops = []
+        noise_function = PENNYLANE_NOISE_OP[noise_name]
+
+        noisy_gates = ["CNOT", "CZ"]
+        for op in circuit:
+            new_ops.append(op)
+            if op.name in noisy_gates:
+                for wire in op.wires:
+                    noise_op = noise_function(**kwargs, wires=wire)
+                    new_ops.append(noise_op)
+
+        return QuantumTape(
+            ops=new_ops, measurements=circuit.measurements, shots=circuit.shots
+        )
 
 
 def twirl_CNOT_gates(circuit: QPROGRAM, num_circuits: int) -> list[QPROGRAM]:
