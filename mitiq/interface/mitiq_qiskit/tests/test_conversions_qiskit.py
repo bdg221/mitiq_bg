@@ -218,6 +218,16 @@ def test_convert_with_qft():
     )
 
 
+def test_convert_qiskit_reset_to_cirq():
+    """Tests converting a Qiskit circuit with a reset to a Cirq circuit."""
+    qreg = qiskit.QuantumRegister(1)
+    circuit = qiskit.QuantumCircuit(qreg)
+    circuit.reset(qreg[0])
+    cirq_circuit = from_qiskit(circuit)
+    assert len(cirq_circuit) == 1
+    assert isinstance(cirq_circuit[0].operations[0].gate, cirq.ResetChannel)
+
+
 @pytest.mark.parametrize("as_qasm", (True, False))
 def test_convert_with_barrier(as_qasm):
     """Tests converting a Qiskit circuit with a barrier to a Cirq circuit."""

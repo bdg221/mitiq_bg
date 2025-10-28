@@ -78,7 +78,7 @@ class Observable:
     def __mul__(
         self, other: "Observable | PauliString | Numeric"
     ) -> "Observable":
-        if isinstance(other, (PauliString, (int, float, complex))):
+        if isinstance(other, (PauliString, int, float, complex)):
             return Observable(*[pauli * other for pauli in self._paulis])
         elif isinstance(other, Observable):
             return Observable(
@@ -91,7 +91,9 @@ class Observable:
         return NotImplemented
 
     def __rmul__(self, other: "PauliString | Numeric") -> "Observable":
-        return Observable(*[other * pauli for pauli in self._paulis])
+        if isinstance(other, (PauliString, int, float, complex)):
+            return Observable(*[other * pauli for pauli in self._paulis])
+        return NotImplemented
 
     @property
     def groups(self) -> list[PauliStringCollection]:
